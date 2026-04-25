@@ -479,67 +479,58 @@ let selectedTags = [];
 
 // ── INIT ──
 window.addEventListener('DOMContentLoaded', async () => {
-  const isConfigured = true;
 
-  if (!isConfigured) {
-    document.getElementById('config-banner').style.display = 'block';
-    // Demo mode: go straight to app with local storage
-    hide('loading-screen'); show('app-screen');
-    loadLocalFallback();
-    return;
+  // Fallback immediato: se dopo 3s è ancora in loading, vai al login
+  setTimeout(() => {
+    const ls = document.getElementById('loading-screen');
+    if (ls && ls.style.display !== 'none') {
+      hide('loading-screen'); show('auth-screen');
+    }
+  }, 3000);
+
+  try {
+    sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  } catch(e) {
+    hide('loading-screen'); show('auth-screen'); return;
   }
 
-  sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  try {
+    // Controlla subito se c'è già una sessione attiva
+    const { data: { session }, error } = await sb.auth.getSession();
 
-  // ── Gestisci token nell'URL (conferma email / OAuth callback) ──
-  const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'));
-  const queryParams = new URLSearchParams(window.location.search);
-  const hasToken = hashParams.get('access_token') || queryParams.get('code') || hashParams.get('type');
+    if (error) { hide('loading-screen'); show('auth-screen'); return; }
 
-  if (hasToken) {
-    // Supabase legge il token dall'URL automaticamente
-    await new Promise(r => setTimeout(r, 800)); // piccola attesa per il parsing
-    const { data: { session: tokenSession } } = await sb.auth.getSession();
-    if (tokenSession?.user) {
-      window.history.replaceState({}, document.title, window.location.pathname);
-      currentUser = tokenSession.user;
+    if (session?.user) {
+      currentUser = session.user;
       await loadUserData();
       hide('loading-screen'); hide('auth-screen'); show('app-screen');
       initApp();
       return;
     }
-  }
 
-  let appStarted = false;
+    // Nessuna sessione: vai al login
+    hide('loading-screen'); show('auth-screen');
 
-  // Listen to auth state changes
-  sb.auth.onAuthStateChange(async (event, session) => {
-    if (appStarted) return;
-    if (session?.user) {
-      appStarted = true;
-      currentUser = session.user;
-      await loadUserData();
-      hide('loading-screen'); hide('auth-screen'); show('app-screen');
-      initApp();
-      if (window.location.hash || window.location.search.includes('code=')) {
-        window.history.replaceState({}, document.title, window.location.pathname);
+    // Ascolta cambi futuri (OAuth callback, conferma email)
+    sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user && !currentUser) {
+        currentUser = session.user;
+        await loadUserData();
+        hide('loading-screen'); hide('auth-screen'); show('app-screen');
+        initApp();
+        if (window.location.hash || window.location.search.includes('code=')) {
+          window.history.replaceState({}, document.title, window.location.pathname);
+        }
       }
-    } else {
-      hide('loading-screen'); show('auth-screen'); hide('app-screen');
-    }
-  });
+      if (event === 'SIGNED_OUT') {
+        currentUser = null; entries = []; tips = []; profile = {};
+        hide('app-screen'); show('auth-screen');
+      }
+    });
 
-  // Controlla sessione esistente
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) { hide('loading-screen'); show('auth-screen'); }
-
-  // Fallback di sicurezza: dopo 7s se ancora in loading mostra auth
-  setTimeout(() => {
-    if (document.getElementById('loading-screen') &&
-        document.getElementById('loading-screen').style.display !== 'none') {
-      hide('loading-screen'); show('auth-screen');
-    }
-  }, 7000);
+  } catch(e) {
+    hide('loading-screen'); show('auth-screen');
+  }
 });
 
 // ── AUTH HELPERS ──
