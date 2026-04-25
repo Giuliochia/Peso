@@ -502,6 +502,8 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     if (session?.user) {
       currentUser = session.user;
+      // Pulisci hash dall'URL se presente
+      if (window.location.hash) window.history.replaceState({}, document.title, window.location.pathname);
       await loadUserData();
       hide('loading-screen'); hide('auth-screen'); show('app-screen');
       initApp();
@@ -513,14 +515,13 @@ window.addEventListener('DOMContentLoaded', async () => {
 
     // Ascolta cambi futuri (OAuth callback, conferma email)
     sb.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user && !currentUser) {
+      if ((event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') && session?.user && !currentUser) {
         currentUser = session.user;
+        // Pulisci subito hash dall'URL (il '#' di Google OAuth)
+        window.history.replaceState({}, document.title, window.location.pathname);
         await loadUserData();
         hide('loading-screen'); hide('auth-screen'); show('app-screen');
         initApp();
-        if (window.location.hash || window.location.search.includes('code=')) {
-          window.history.replaceState({}, document.title, window.location.pathname);
-        }
       }
       if (event === 'SIGNED_OUT') {
         currentUser = null; entries = []; tips = []; profile = {};
@@ -945,8 +946,8 @@ async function clearAllData() {
 }
 
 // ── UTILS ──
-function show(id) { document.getElementById(id).style.display = ''; }
-function hide(id) { document.getElementById(id).style.display = 'none'; }
+function show(id) { const el = document.getElementById(id); if(el) el.style.display = 'block'; }
+function hide(id) { const el = document.getElementById(id); if(el) el.style.display = 'none'; }
 function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function fmtDate(d) { const [y,m,day] = d.split('-'); return `${day}/${m}/${y}`; }
 function showToast(msg) {
