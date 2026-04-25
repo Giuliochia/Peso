@@ -316,7 +316,9 @@
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('dashboard')">📊 Dashboard</button>
       <button class="tab-btn" onclick="switchTab('log')">✍️ Log</button>
-      <button class="tab-btn" onclick="switchTab('tips')">💡 Tips</button>
+      <button class="tab-btn" onclick="switchTab('calcolatori')">🧮 Calcola</button>
+      <button class="tab-btn" onclick="switchTab('progressi')">📸 Progressi</button>
+      <button class="tab-btn" onclick="switchTab('statistiche')">📈 Statistiche</button>
       <button class="tab-btn" onclick="switchTab('profilo')">⚙️ Profilo</button>
     </div>
 
@@ -408,25 +410,230 @@
       </div>
     </div>
 
-    <!-- TIPS -->
-    <div class="tab-panel" id="tab-tips">
-      <div class="card" style="margin-bottom:18px">
-        <div class="card-label">Aggiungi tip personale</div>
-        <div class="row">
-          <div class="field"><label>Titolo</label><input type="text" id="tip-title" placeholder="es. Bevi 2L al giorno"></div>
-          <div class="field" style="max-width:150px"><label>Categoria</label>
-            <select id="tip-cat">
-              <option value="nutrition">🥗 Nutrizione</option>
-              <option value="exercise">🏋️ Esercizio</option>
-              <option value="mental">🧘 Mentale</option>
-              <option value="general">📌 Generale</option>
+    <!-- CALCOLATORI -->
+    <div class="tab-panel" id="tab-calcolatori">
+      <div class="grid">
+        <!-- TDEE -->
+        <div class="card">
+          <div class="card-label">🔥 TDEE — Fabbisogno Calorico</div>
+          <div class="field"><label>Livello di attività</label>
+            <select id="tdee-activity">
+              <option value="1.2">🛋 Sedentario (poco o nessun esercizio)</option>
+              <option value="1.375">🚶 Leggermente attivo (1-3 giorni/sett)</option>
+              <option value="1.55" selected>🏃 Moderatamente attivo (3-5 giorni/sett)</option>
+              <option value="1.725">💪 Molto attivo (6-7 giorni/sett)</option>
+              <option value="1.9">🏋️ Estremamente attivo (atleta)</option>
             </select>
           </div>
+          <button class="btn btn-primary" onclick="calcTDEE()">Calcola TDEE</button>
+          <div id="tdee-result" style="margin-top:16px;display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Mantenimento</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent)" id="tdee-maintain">—</div>
+                <div style="font-size:10px;color:var(--muted)">kcal/giorno</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Deficit (-500)</div>
+                <div style="font-size:22px;font-weight:800;color:var(--success)" id="tdee-deficit">—</div>
+                <div style="font-size:10px;color:var(--muted)">kcal/giorno</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Surplus (+300)</div>
+                <div style="font-size:22px;font-weight:800;color:var(--warn)" id="tdee-surplus">—</div>
+                <div style="font-size:10px;color:var(--muted)">kcal/giorno</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">BMR Base</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent2)" id="tdee-bmr">—</div>
+                <div style="font-size:10px;color:var(--muted)">kcal/giorno</div>
+              </div>
+            </div>
+            <div id="tdee-note" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:12px;line-height:1.6;padding:10px;background:var(--surface2);border-radius:8px"></div>
+          </div>
+          <div id="tdee-error" style="display:none;margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--danger)">⚠️ Completa il profilo (altezza, età, sesso) e aggiungi almeno una misurazione</div>
         </div>
-        <div class="field"><label>Descrizione</label><textarea id="tip-text" rows="2" placeholder="Spiega il tuo tip..."></textarea></div>
-        <button class="btn btn-primary" onclick="addTip()">+ Salva Tip</button>
+
+        <!-- Proteine -->
+        <div class="card">
+          <div class="card-label">🥩 Fabbisogno Proteico</div>
+          <div class="field"><label>Obiettivo</label>
+            <select id="prot-goal">
+              <option value="1.6">🔥 Dimagrimento (preservare muscolo)</option>
+              <option value="1.8" selected>⚖️ Ricomposizione corporea</option>
+              <option value="2.0">💪 Aumento massa muscolare</option>
+              <option value="2.2">🏋️ Atleta / alta intensità</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="calcProtein()">Calcola Proteine</button>
+          <div id="prot-result" style="margin-top:16px;display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px">
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Proteine/giorno</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent)" id="prot-grams">—</div>
+                <div style="font-size:10px;color:var(--muted)">grammi</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Per pasto (3 pasti)</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent3)" id="prot-meal">—</div>
+                <div style="font-size:10px;color:var(--muted)">grammi</div>
+              </div>
+            </div>
+            <div style="margin-top:12px">
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Fonti proteiche equivalenti</div>
+              <div id="prot-sources" style="display:flex;flex-direction:column;gap:6px"></div>
+            </div>
+          </div>
+          <div id="prot-error" style="display:none;margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--danger)">⚠️ Aggiungi almeno una misurazione del peso</div>
+        </div>
+
+        <!-- Calcolatore Peso Ideale -->
+        <div class="card">
+          <div class="card-label">⚖️ Peso Ideale</div>
+          <div id="ideal-result">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:4px">
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Formula Devine</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent)" id="ideal-devine">—</div>
+                <div style="font-size:10px;color:var(--muted)">kg</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Formula Hamwi</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent2)" id="ideal-hamwi">—</div>
+                <div style="font-size:10px;color:var(--muted)">kg</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Range BMI sano</div>
+                <div style="font-size:16px;font-weight:800;color:var(--success)" id="ideal-bmi-range">—</div>
+                <div style="font-size:10px;color:var(--muted)">kg</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Da perdere/guadagnare</div>
+                <div style="font-size:22px;font-weight:800;" id="ideal-diff">—</div>
+                <div style="font-size:10px;color:var(--muted)" id="ideal-diff-lbl">kg</div>
+              </div>
+            </div>
+            <div id="ideal-error" style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);margin-top:12px">Completa altezza, sesso e aggiungi una misurazione</div>
+          </div>
+        </div>
+
+        <!-- Velocità perdita peso -->
+        <div class="card">
+          <div class="card-label">⏱ Stima Tempo Obiettivo</div>
+          <div class="field"><label>Deficit calorico giornaliero (kcal)</label>
+            <select id="speed-deficit">
+              <option value="250">250 kcal — Lento e sostenibile (~0.25 kg/sett)</option>
+              <option value="500" selected>500 kcal — Moderato (~0.5 kg/sett)</option>
+              <option value="750">750 kcal — Veloce (~0.75 kg/sett)</option>
+              <option value="1000">1000 kcal — Aggressivo (~1 kg/sett)</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="calcSpeed()">Calcola Tempo</button>
+          <div id="speed-result" style="margin-top:16px;display:none">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Settimane stimate</div>
+                <div style="font-size:22px;font-weight:800;color:var(--accent)" id="speed-weeks">—</div>
+              </div>
+              <div style="background:var(--surface2);border-radius:10px;padding:12px;text-align:center">
+                <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">Data stimata</div>
+                <div style="font-size:14px;font-weight:800;color:var(--warn)" id="speed-date">—</div>
+              </div>
+            </div>
+            <div id="speed-note" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:10px;line-height:1.6;padding:10px;background:var(--surface2);border-radius:8px"></div>
+          </div>
+          <div id="speed-error" style="display:none;margin-top:12px;font-family:'Space Mono',monospace;font-size:11px;color:var(--danger)">⚠️ Imposta un obiettivo nel profilo e aggiungi una misurazione</div>
+        </div>
       </div>
-      <div class="tips-grid" id="tips-grid"></div>
+    </div>
+
+    <!-- PROGRESSI FOTO -->
+    <div class="tab-panel" id="tab-progressi">
+      <div class="grid">
+        <div class="card">
+          <div class="card-label">📸 Aggiungi Foto Progresso</div>
+          <div class="field"><label>Data</label><input type="date" id="photo-date"></div>
+          <div class="field"><label>Peso al momento (kg)</label><input type="number" id="photo-weight" placeholder="es. 85.0" step="0.1"></div>
+          <div class="field"><label>Nota</label><input type="text" id="photo-note" placeholder="es. Dopo 1 mese di dieta"></div>
+          <div class="field"><label>Foto</label>
+            <div id="photo-drop" onclick="document.getElementById('photo-input').click()"
+              style="border:2px dashed var(--border);border-radius:12px;padding:32px;text-align:center;cursor:pointer;transition:all 0.2s;background:var(--surface2)">
+              <div style="font-size:32px;margin-bottom:8px">📷</div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--muted)">Clicca per scegliere una foto</div>
+              <div style="font-family:'Space Mono',monospace;font-size:10px;color:var(--border);margin-top:4px">JPG, PNG, WEBP — max 5MB</div>
+            </div>
+            <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="previewPhoto(event)">
+          </div>
+          <div id="photo-preview-wrap" style="display:none;margin-bottom:12px">
+            <img id="photo-preview" style="width:100%;border-radius:10px;max-height:200px;object-fit:cover">
+          </div>
+          <button class="btn btn-primary" onclick="addPhoto()">📸 Salva Foto</button>
+        </div>
+        <div class="card">
+          <div class="card-label">📁 Le tue foto</div>
+          <div id="photos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="empty" style="grid-column:span 2"><div class="empty-icon">📷</div>Nessuna foto ancora</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATISTICHE -->
+    <div class="tab-panel" id="tab-statistiche">
+      <div class="grid-3" style="margin-bottom:18px">
+        <div class="card">
+          <div class="card-label">Media Settimanale</div>
+          <div style="font-size:26px;font-weight:800;color:var(--accent)" id="stat-weekly-avg">—</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:4px">kg ultimi 7 giorni</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Media Mensile</div>
+          <div style="font-size:26px;font-weight:800;color:var(--accent2)" id="stat-monthly-avg">—</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:4px">kg ultimi 30 giorni</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Ritmo Perdita</div>
+          <div style="font-size:26px;font-weight:800;color:var(--success)" id="stat-rate">—</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;margin-top:4px">kg/settimana (media)</div>
+        </div>
+      </div>
+      <div class="grid">
+        <div class="card">
+          <div class="card-label">📈 Proiezione Andamento</div>
+          <div class="chart-wrap" style="height:200px">
+            <canvas id="projectionChart"></canvas>
+            <div class="chart-empty" id="proj-empty">Aggiungi 3+ misurazioni</div>
+          </div>
+          <div id="proj-info" style="font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);margin-top:10px;line-height:1.7;display:none"></div>
+        </div>
+        <div class="card">
+          <div class="card-label">📅 Trend Mensile</div>
+          <div id="monthly-trend" style="display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto">
+            <div class="empty"><div class="empty-icon">📅</div>Nessun dato</div>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px">
+        <div class="card-label">🔥 Streak & Consistenza</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:26px;font-weight:800;color:var(--accent)" id="streak-current">0</div>
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px">Streak attuale</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:26px;font-weight:800;color:var(--warn)" id="streak-best">0</div>
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px">Record streak</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:26px;font-weight:800;color:var(--accent2)" id="stat-this-month">0</div>
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px">Questo mese</div>
+          </div>
+          <div style="background:var(--surface2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:26px;font-weight:800;color:var(--accent3)" id="stat-consistency">0%</div>
+            <div style="font-family:'Space Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px">Consistenza</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- PROFILO -->
@@ -640,9 +847,9 @@ function initApp() {
   document.getElementById('prof-email-display').textContent = email;
 
   document.getElementById('inp-date').valueAsDate = new Date();
+  loadPhotosLocal();
   updateHeader();
   renderDashboard();
-  renderTips();
   renderProfile();
 }
 
@@ -665,7 +872,9 @@ function switchTab(name) {
   event.currentTarget.classList.add('active');
   if (name === 'dashboard') renderDashboard();
   if (name === 'log') renderEntries();
-  if (name === 'tips') renderTips();
+  if (name === 'calcolatori') renderCalcolatori();
+  if (name === 'progressi') { loadPhotosLocal(); renderPhotos(); document.getElementById('photo-date').valueAsDate=new Date(); }
+  if (name === 'statistiche') renderStatistiche();
   if (name === 'profilo') renderProfile();
 }
 
@@ -846,55 +1055,207 @@ function bmiInfo(bmi) {
   return { cat: 'Obeso grave', color: '#c84fff', pct: 0.95 };
 }
 
-// ── TIPS ──
-const DEFAULT_TIPS = [
-  { id: 'def1', title: 'Pesati sempre al mattino', text: 'A digiuno, dopo il bagno. Misure coerenti nel tempo.', cat: 'general', icon: '⏰' },
-  { id: 'def2', title: 'Non ossessionarti', text: 'Fluttuazioni di 1–2 kg al giorno sono normali. Guarda il trend settimanale.', cat: 'mental', icon: '🧘' },
-  { id: 'def3', title: 'Proteine ad ogni pasto', text: 'Aumentano la sazietà e preservano la massa muscolare durante la dieta.', cat: 'nutrition', icon: '🥩' },
-  { id: 'def4', title: 'Acqua prima dei pasti', text: '500ml di acqua 30 min prima del pasto riduce l\'apporto calorico spontaneo.', cat: 'nutrition', icon: '💧' },
-];
-
-function renderTips() {
-  const all = [...DEFAULT_TIPS, ...tips];
-  const grid = document.getElementById('tips-grid');
-  if (!all.length) { grid.innerHTML = '<div class="empty"><div class="empty-icon">💡</div>Nessun tip</div>'; return; }
-  grid.innerHTML = all.map(t => `
-    <div class="tip-card">
-      <div class="tip-header">
-        <span class="tip-title">${t.icon || '💡'} ${esc(t.title)}</span>
-        <span class="tip-cat-badge ${t.cat}">${catLabel(t.cat)}</span>
-      </div>
-      <div class="tip-text">${esc(t.text)}</div>
-      ${!String(t.id).startsWith('def') ? `<button class="btn btn-danger-ghost btn-sm" style="margin-top:8px" onclick="deleteTip('${t.id}')">✕ Rimuovi</button>` : ''}
-    </div>
-  `).join('');
+// ── CALCOLATORI ──
+function getBMR() {
+  const w = entries.length ? entries[entries.length-1].weight : null;
+  if (!profile.height || !profile.age || !w || !profile.gender) return null;
+  if (profile.gender === 'm') return 88.362 + (13.397*w) + (4.799*profile.height) - (5.677*profile.age);
+  return 447.593 + (9.247*w) + (3.098*profile.height) - (4.330*profile.age);
 }
 
-async function addTip() {
-  const title = document.getElementById('tip-title').value.trim();
-  const text = document.getElementById('tip-text').value.trim();
-  const cat = document.getElementById('tip-cat').value;
-  if (!title || !text) { showToast('⚠️ Inserisci titolo e testo'); return; }
-  const icon = { nutrition: '🥗', exercise: '🏋️', mental: '🧘', general: '📌' }[cat] || '💡';
-  const newTip = { title, text, cat, icon };
-  if (sb && currentUser) {
-    const { data, error } = await sb.from('tips').insert({ ...newTip, user_id: currentUser.id }).select().single();
-    if (error) { showToast('❌ Errore salvataggio'); return; }
-    tips.push(data);
-  } else { newTip.id = Date.now(); tips.push(newTip); saveLocal(); }
-  renderTips();
-  document.getElementById('tip-title').value = '';
-  document.getElementById('tip-text').value = '';
-  showToast('💡 Tip salvato!');
+function calcTDEE() {
+  const bmr = getBMR();
+  if (!bmr) { document.getElementById('tdee-error').style.display='block'; document.getElementById('tdee-result').style.display='none'; return; }
+  document.getElementById('tdee-error').style.display='none';
+  const act = parseFloat(document.getElementById('tdee-activity').value);
+  const tdee = Math.round(bmr * act);
+  document.getElementById('tdee-maintain').textContent = tdee;
+  document.getElementById('tdee-deficit').textContent = tdee - 500;
+  document.getElementById('tdee-surplus').textContent = tdee + 300;
+  document.getElementById('tdee-bmr').textContent = Math.round(bmr);
+  const actLabel = {1.2:'sedentario',1.375:'leggermente attivo',1.55:'moderatamente attivo',1.725:'molto attivo',1.9:'estremamente attivo'}[act]||'';
+  document.getElementById('tdee-note').textContent = 'Con il tuo stile di vita '+actLabel+', bruci circa '+tdee+' kcal/giorno. Per perdere ~0.5 kg/sett mantieni un deficit di 500 kcal.';
+  document.getElementById('tdee-result').style.display='block';
 }
 
-async function deleteTip(id) {
-  if (sb && currentUser) await sb.from('tips').delete().eq('id', id).eq('user_id', currentUser.id);
-  tips = tips.filter(t => String(t.id) !== String(id));
-  saveLocal(); renderTips();
+function calcProtein() {
+  const w = entries.length ? entries[entries.length-1].weight : null;
+  if (!w) { document.getElementById('prot-error').style.display='block'; document.getElementById('prot-result').style.display='none'; return; }
+  document.getElementById('prot-error').style.display='none';
+  const ratio = parseFloat(document.getElementById('prot-goal').value);
+  const grams = Math.round(w * ratio);
+  document.getElementById('prot-grams').textContent = grams;
+  document.getElementById('prot-meal').textContent = Math.round(grams/3);
+  const sources = [
+    {name:'🍗 Petto di pollo', gper100:31},{name:'🥚 Uova intere', gper100:13},
+    {name:'🐟 Tonno in scatola', gper100:26},{name:'🧀 Ricotta', gper100:11},{name:'🥛 Yogurt greco', gper100:10},
+  ];
+  document.getElementById('prot-sources').innerHTML = sources.map(s => {
+    const qty = Math.round(grams / s.gper100 * 100);
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--surface2);border-radius:8px;font-size:12px"><span>'+s.name+'</span><span style="font-family:Space Mono,monospace;color:var(--accent);font-size:11px">'+qty+'g</span></div>';
+  }).join('');
+  document.getElementById('prot-result').style.display='block';
 }
 
-function catLabel(c) { return { nutrition: '🥗 Nutrizione', exercise: '🏋️ Esercizio', mental: '🧘 Mentale', general: '📌 Generale' }[c] || c; }
+function calcIdealWeight() {
+  if (!profile.height || !profile.gender) { document.getElementById('ideal-error').textContent='Completa altezza e sesso nel profilo'; return; }
+  const h = profile.height; const isMale = profile.gender==='m';
+  const hInches = (h - 152.4) / 2.54;
+  const devine = isMale ? 50 + 2.3*hInches : 45.5 + 2.3*hInches;
+  const hamwi = isMale ? 48 + 2.7*hInches : 45.5 + 2.2*hInches;
+  const hm = h/100;
+  const bmiMin = Math.round(18.5*hm*hm*10)/10, bmiMax = Math.round(24.9*hm*hm*10)/10;
+  document.getElementById('ideal-devine').textContent = Math.round(devine*10)/10 + ' kg';
+  document.getElementById('ideal-hamwi').textContent = Math.round(hamwi*10)/10 + ' kg';
+  document.getElementById('ideal-bmi-range').textContent = bmiMin + ' — ' + bmiMax;
+  const curr = entries.length ? entries[entries.length-1].weight : null;
+  if (curr) {
+    const avg = (devine+hamwi)/2, diff = (curr - avg).toFixed(1);
+    const el = document.getElementById('ideal-diff');
+    el.textContent = diff > 0 ? '+'+diff : diff;
+    el.style.color = diff > 0 ? 'var(--danger)' : diff < 0 ? 'var(--success)' : 'var(--muted)';
+    document.getElementById('ideal-diff-lbl').textContent = diff > 0 ? 'kg da perdere (media)' : diff < 0 ? 'kg da guadagnare' : 'Peso ideale!';
+  }
+  document.getElementById('ideal-error').textContent='';
+}
+
+function calcSpeed() {
+  const curr = entries.length ? entries[entries.length-1].weight : null;
+  const goal = profile.goal;
+  if (!curr || !goal) { document.getElementById('speed-error').style.display='block'; document.getElementById('speed-result').style.display='none'; return; }
+  document.getElementById('speed-error').style.display='none';
+  const deficit = parseInt(document.getElementById('speed-deficit').value);
+  const kgPerWeek = deficit / 7700 * 7;
+  const kgToLose = Math.abs(curr - goal);
+  const weeks = Math.ceil(kgToLose / kgPerWeek);
+  const targetDate = new Date(); targetDate.setDate(targetDate.getDate() + weeks*7);
+  document.getElementById('speed-weeks').textContent = weeks;
+  document.getElementById('speed-date').textContent = targetDate.toLocaleDateString('it-IT',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('speed-note').textContent = 'Con un deficit di '+deficit+' kcal/giorno perdi circa '+kgPerWeek.toFixed(2)+' kg/settimana. Mancano '+kgToLose.toFixed(1)+' kg all'obiettivo di '+goal+' kg.';
+  document.getElementById('speed-result').style.display='block';
+}
+
+function renderCalcolatori() { calcIdealWeight(); }
+
+// ── FOTO PROGRESSI ──
+let photos = [];
+let currentPhotoB64 = null;
+
+function previewPhoto(e) {
+  const file = e.target.files[0]; if(!file) return;
+  if(file.size > 5*1024*1024) { showToast('⚠️ Foto troppo grande (max 5MB)'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentPhotoB64 = ev.target.result;
+    document.getElementById('photo-preview').src = currentPhotoB64;
+    document.getElementById('photo-preview-wrap').style.display='block';
+    document.getElementById('photo-drop').style.borderColor='var(--accent)';
+  };
+  reader.readAsDataURL(file);
+}
+
+function addPhoto() {
+  const date = document.getElementById('photo-date').value;
+  const weight = parseFloat(document.getElementById('photo-weight').value)||null;
+  const note = document.getElementById('photo-note').value.trim();
+  if (!currentPhotoB64) { showToast('⚠️ Seleziona una foto'); return; }
+  if (!date) { showToast('⚠️ Seleziona una data'); return; }
+  photos.push({id:Date.now(),date,weight,note,src:currentPhotoB64});
+  savePhotosLocal(); currentPhotoB64=null;
+  document.getElementById('photo-preview-wrap').style.display='none';
+  document.getElementById('photo-drop').style.borderColor='var(--border)';
+  ['photo-date','photo-weight','photo-note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('photo-input').value='';
+  renderPhotos(); showToast('📸 Foto salvata!');
+}
+
+function renderPhotos() {
+  const grid = document.getElementById('photos-grid');
+  if (!photos.length) { grid.innerHTML='<div class="empty" style="grid-column:span 2"><div class="empty-icon">📷</div>Nessuna foto ancora</div>'; return; }
+  const sorted = [...photos].sort((a,b)=>b.date.localeCompare(a.date));
+  grid.innerHTML = sorted.map(p =>
+    '<div style="position:relative;border-radius:12px;overflow:hidden;border:1px solid var(--border)">'+
+    '<img src="'+p.src+'" style="width:100%;height:160px;object-fit:cover;display:block">'+
+    '<div style="padding:8px;background:var(--surface2)">'+
+    '<div style="font-family:Space Mono,monospace;font-size:10px;color:var(--accent)">'+fmtDate(p.date)+'</div>'+
+    (p.weight?'<div style="font-size:13px;font-weight:700;margin-top:2px">'+p.weight+' kg</div>':'')+
+    (p.note?'<div style="font-size:11px;color:var(--muted);margin-top:2px">'+esc(p.note)+'</div>':'')+
+    '<button class="btn btn-danger-ghost btn-sm" style="margin-top:6px;width:100%" onclick="deletePhoto('+p.id+')">✕ Rimuovi</button>'+
+    '</div></div>'
+  ).join('');
+}
+
+function deletePhoto(id) { photos=photos.filter(p=>p.id!==id); savePhotosLocal(); renderPhotos(); showToast('🗑 Foto rimossa'); }
+function savePhotosLocal() { try { localStorage.setItem('pesolog_photos_'+(currentUser?.id||'local'), JSON.stringify(photos)); } catch(e){} }
+function loadPhotosLocal() { try { photos=JSON.parse(localStorage.getItem('pesolog_photos_'+(currentUser?.id||'local'))||'[]'); } catch(e){photos=[];} }
+
+// ── STATISTICHE AVANZATE ──
+function renderStatistiche() {
+  if (!entries.length) return;
+  const now = new Date();
+  const last7 = entries.filter(e=>{const d=new Date(e.date);return (now-d)/(864e5)<=7;});
+  const last30 = entries.filter(e=>{const d=new Date(e.date);return (now-d)/(864e5)<=30;});
+  const thisMonth = entries.filter(e=>{const d=new Date(e.date);return d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear();});
+  const avg = arr=>arr.length?(arr.reduce((s,e)=>s+e.weight,0)/arr.length).toFixed(1):'—';
+  document.getElementById('stat-weekly-avg').textContent = avg(last7)+(last7.length?' kg':'');
+  document.getElementById('stat-monthly-avg').textContent = avg(last30)+(last30.length?' kg':'');
+  document.getElementById('stat-this-month').textContent = thisMonth.length;
+  if (entries.length>=2) {
+    const first=entries[0],last=entries[entries.length-1];
+    const days=Math.max(1,(new Date(last.date)-new Date(first.date))/864e5);
+    const rate=((first.weight-last.weight)/days*7).toFixed(2);
+    const el=document.getElementById('stat-rate'); el.textContent=(rate>0?'-':'+')+Math.abs(rate); el.style.color=rate>0?'var(--success)':'var(--danger)';
+  }
+  // Streak
+  const dates=new Set(entries.map(e=>e.date)); let streak=0,bestStreak=0,cur=0;
+  const today=new Date(); today.setHours(0,0,0,0);
+  for(let i=0;i<365;i++){const d=new Date(today);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);
+    if(dates.has(ds)){cur++;if(i<=1)streak=cur;bestStreak=Math.max(bestStreak,cur);}else{if(i>1)cur=0;}}
+  document.getElementById('streak-current').textContent=streak;
+  document.getElementById('streak-best').textContent=bestStreak;
+  if(entries.length>=2){const startD=new Date(entries[0].date);const tot=Math.max(1,(new Date()-startD)/864e5);document.getElementById('stat-consistency').textContent=Math.round(entries.length/tot*100)+'%';}
+  // Trend mensile
+  const byMonth={};
+  entries.forEach(e=>{const k=e.date.slice(0,7);if(!byMonth[k])byMonth[k]=[];byMonth[k].push(e.weight);});
+  const months=Object.keys(byMonth).sort().reverse().slice(0,6);
+  document.getElementById('monthly-trend').innerHTML=months.length?months.map(m=>{
+    const ws=byMonth[m],a=(ws.reduce((a,b)=>a+b,0)/ws.length).toFixed(1);
+    const mn2=Math.min(...ws).toFixed(1),mx2=Math.max(...ws).toFixed(1);
+    const [y,mo]=m.split('-');
+    const mName=new Date(y,mo-1).toLocaleDateString('it-IT',{month:'long',year:'numeric'});
+    return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface2);border-radius:10px"><div><div style="font-weight:700;font-size:13px;text-transform:capitalize">'+mName+'</div><div style="font-family:Space Mono,monospace;font-size:10px;color:var(--muted)">'+ws.length+' mis · min '+mn2+' · max '+mx2+'</div></div><div style="font-size:18px;font-weight:800;color:var(--accent)">'+a+' kg</div></div>';
+  }).join(''):'<div class="empty"><div class="empty-icon">📅</div>Nessun dato</div>';
+  drawProjection();
+}
+
+function drawProjection() {
+  const canvas=document.getElementById('projectionChart'),ce=document.getElementById('proj-empty');
+  if(entries.length<3){ce.style.display='flex';return;} ce.style.display='none';
+  const n=entries.length,xs=entries.map((_,i)=>i),ys=entries.map(e=>e.weight);
+  const sumX=xs.reduce((a,b)=>a+b,0),sumY=ys.reduce((a,b)=>a+b,0);
+  const sumXY=xs.reduce((a,x,i)=>a+x*ys[i],0),sumX2=xs.reduce((a,x)=>a+x*x,0);
+  const slope=(n*sumXY-sumX*sumY)/(n*sumX2-sumX*sumX),intercept=(sumY-slope*sumX)/n;
+  const pp=8,allData=[...entries.map((e,i)=>({x:i,y:e.weight,real:true}))];
+  for(let i=1;i<=pp;i++) allData.push({x:n-1+i,y:Math.max(40,intercept+slope*(n-1+i)),real:false});
+  const ctx=canvas.getContext('2d'),W=canvas.width=canvas.offsetWidth,H=canvas.height=canvas.offsetHeight;
+  ctx.clearRect(0,0,W,H);
+  const allY=allData.map(d=>d.y); if(profile.goal)allY.push(parseFloat(profile.goal));
+  const mn=Math.min(...allY)-1,mx=Math.max(...allY)+1,rng=mx-mn;
+  const px=i=>(i/(allData.length-1))*(W-40)+20,py=v=>H-20-((v-mn)/rng)*(H-40);
+  ctx.strokeStyle='rgba(42,42,61,0.8)';ctx.lineWidth=1;
+  for(let i=0;i<4;i++){const y=20+(i/3)*(H-40);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  if(profile.goal){const gy=py(parseFloat(profile.goal));ctx.beginPath();ctx.strokeStyle='rgba(106,247,200,0.4)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();ctx.setLineDash([]);}
+  const real=allData.filter(d=>d.real);
+  ctx.beginPath();ctx.strokeStyle='#7c6af7';ctx.lineWidth=2;ctx.lineJoin='round';
+  real.forEach((d,i)=>i===0?ctx.moveTo(px(d.x),py(d.y)):ctx.lineTo(px(d.x),py(d.y)));ctx.stroke();
+  const lastReal=real[real.length-1],proj=allData.filter(d=>!d.real);
+  ctx.beginPath();ctx.strokeStyle='rgba(247,196,106,0.7)';ctx.lineWidth=2;ctx.setLineDash([5,4]);
+  ctx.moveTo(px(lastReal.x),py(lastReal.y));proj.forEach(d=>ctx.lineTo(px(d.x),py(d.y)));ctx.stroke();ctx.setLineDash([]);
+  real.forEach(d=>{ctx.beginPath();ctx.arc(px(d.x),py(d.y),3,0,Math.PI*2);ctx.fillStyle='#7c6af7';ctx.fill();});
+  const lastProj=proj[proj.length-1],info=document.getElementById('proj-info');
+  info.style.display='block';
+  info.textContent=(slope<0?'↘ Calante: '+Math.abs(slope).toFixed(2):'↗ Crescente: '+Math.abs(slope).toFixed(2))+' kg/mis · Proiezione: '+lastProj.y.toFixed(1)+' kg';
+}
 
 // ── PROFILE ──
 function renderProfile() {
