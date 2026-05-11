@@ -151,6 +151,9 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
 .empty{text-align:center;padding:32px 16px;color:var(--muted);font-family:'Space Mono',monospace;font-size:12px}
 .ei{font-size:28px;margin-bottom:8px}
 @media(max-width:640px){.g2,.g3{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.hs{display:none}}
+.flt-btn{background:var(--surface2);border:1px solid var(--border);border-radius:7px;color:var(--muted);font-family:'Syne',sans-serif;font-size:11px;font-weight:600;padding:4px 10px;cursor:pointer;transition:all .2s}
+.flt-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+#chart-tip{position:fixed;display:none;z-index:200;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:5px 11px;font-family:'Space Mono',monospace;font-size:11px;color:var(--text);pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.5)}
 </style>
 </head>
 <body>
@@ -168,8 +171,8 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
       <p>Traccia il tuo percorso</p>
     </div>
     <div class="auth-tabs">
-      <button class="auth-tab active" onclick="authMode('login')">Accedi</button>
-      <button class="auth-tab" onclick="authMode('register')">Registrati</button>
+      <button class="auth-tab active" onclick="authMode('login',this)">Accedi</button>
+      <button class="auth-tab" onclick="authMode('register',this)">Registrati</button>
     </div>
     <div id="aerr" class="amsg err"></div>
     <div id="aok" class="amsg ok"></div>
@@ -283,9 +286,15 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
           <button class="btn btn-p" id="badd" onclick="addEntry()">+ Aggiungi Misurazione</button>
         </div>
         <div class="card">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px">
             <div class="cl" style="margin-bottom:0">Storico</div>
-            <button class="btn btn-gh btn-sm" onclick="exportCSV()">⬇ CSV</button>
+            <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+              <button class="flt-btn active" onclick="setFilter('all',this)">Tutto</button>
+              <button class="flt-btn" onclick="setFilter('90d',this)">90g</button>
+              <button class="flt-btn" onclick="setFilter('30d',this)">30g</button>
+              <button class="flt-btn" onclick="setFilter('7d',this)">7g</button>
+              <button class="btn btn-gh btn-sm" onclick="exportCSV()">⬇ CSV</button>
+            </div>
           </div>
           <div class="el" id="elist"><div class="empty"><div class="ei">📋</div>Nessuna misurazione</div></div>
         </div>
@@ -470,15 +479,19 @@ input::placeholder,textarea::placeholder{color:var(--muted)}
   </div>
 </div>
 
+<div id="chart-tip"></div>
 <div class="toast" id="toast"></div>
 
 <script>
 const SURL='https://noidfkbbdwmcoyncwqpv.supabase.co';
 const SKEY='sb_publishable_CDIXa_PGEgEESVqq1aNXGA_etq9ATsg';
 const {createClient}=supabase;
-let sb,user,profile={},entries=[],photos=[],mood='😐',tags=[];
+let sb,user,profile={},entries=[],photos=[],mood='😐',tags=[],logFilter='all';
 
 window.addEventListener('DOMContentLoaded',async()=>{
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  ['le','lp'].forEach(id=>el(id).addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();}));
+  ['rn','re','rp'].forEach(id=>el(id).addEventListener('keydown',e=>{if(e.key==='Enter')doRegister();}));
   setTimeout(()=>{if(el('loading').style.display!=='none'){S('loading','none');S('auth','flex');}},4000);
   try{sb=createClient(SURL,SKEY);}catch(e){S('loading','none');S('auth','flex');return;}
   try{
@@ -503,9 +516,9 @@ function fd(d){const[y,m,day]=d.split('-');return day+'/'+m+'/'+y;}
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function toast(msg){const t=el('toast');t.textContent=msg;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),2500);}
 
-function authMode(m){
+function authMode(m,btn){
   document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
-  event.target.classList.add('active');
+  btn.classList.add('active');
   S('fl',m==='login'?'block':'none');S('fr',m==='register'?'block':'none');
   S('aerr','none');S('aok','none');
 }
@@ -553,7 +566,7 @@ async function loadData(){
   profile=pr.data||{};entries=en.data||[];
   try{photos=JSON.parse(localStorage.getItem('plp_'+user.id)||'[]');}catch(e){photos=[];}
 }
-function savePhotos(){try{localStorage.setItem('plp_'+user.id,JSON.stringify(photos));}catch(e){}}
+function savePhotos(){try{localStorage.setItem('plp_'+user.id,JSON.stringify(photos));}catch(e){if(e.name==='QuotaExceededError')toast('Spazio esaurito! Rimuovi alcune foto.');}
 
 function initUI(){
   const em=user.email||'',nm=(user.user_metadata&&user.user_metadata.full_name)||profile.name||'';
@@ -585,11 +598,12 @@ function updateHeader(){
 }
 
 function bmiInfo(b){
-  if(b<18.5)return{cat:'Sottopeso',color:'#6af7c8',pct:.1};
-  if(b<25)return{cat:'Normale',color:'#6af7c8',pct:.3};
-  if(b<30)return{cat:'Sovrappeso',color:'#f7c46a',pct:.6};
-  if(b<35)return{cat:'Obeso',color:'#f76a8c',pct:.8};
-  return{cat:'Obeso grave',color:'#c84fff',pct:.95};
+  const pct=Math.min(0.97,Math.max(0.03,(b-10)/35));
+  if(b<18.5)return{cat:'Sottopeso',color:'#6af7c8',pct};
+  if(b<25)return{cat:'Normale',color:'#6af7c8',pct};
+  if(b<30)return{cat:'Sovrappeso',color:'#f7c46a',pct};
+  if(b<35)return{cat:'Obeso',color:'#f76a8c',pct};
+  return{cat:'Obeso grave',color:'#c84fff',pct};
 }
 
 function renderDash(){
@@ -620,28 +634,72 @@ function renderDash(){
   el('dmx').textContent=mxE.weight+' kg';el('dmxd').textContent=fd(mxE.date);
   el('dmn').textContent=mnE.weight+' kg';el('dmnd').textContent=fd(mnE.date);
   el('dcnt').textContent=entries.length;
-  drawChart('mc',entries,el('dce'));
+  drawChart('mc',entries,el('dce'),{ma:true});
 }
 
-function drawChart(cid,data,emptyEl){
+function initChartTooltip(cv){
+  if(cv._tipInit)return;cv._tipInit=true;
+  const LP=36,RP=10;
+  cv.addEventListener('mousemove',ev=>{
+    const data=cv._chartData;if(!data||data.length<2)return;
+    const W=cv.offsetWidth,rect=cv.getBoundingClientRect(),mx=ev.clientX-rect.left;
+    const pxf=i=>LP+(i/(data.length-1))*(W-LP-RP);
+    let closest=null,minDist=Infinity;
+    data.forEach((e,i)=>{const dist=Math.abs(mx-pxf(i));if(dist<minDist){minDist=dist;closest=e;}});
+    const tip=el('chart-tip');
+    if(closest&&minDist<50){
+      const w=closest.weight!==undefined?closest.weight:closest.y;
+      const label=(closest.r===false?'<span style="color:var(--warn)">Proiezione</span> ':'')+(closest.date?fd(closest.date)+' &nbsp;·&nbsp; ':'')+parseFloat(w).toFixed(1)+' kg';
+      tip.innerHTML=label;
+      tip.style.left=Math.min(window.innerWidth-170,ev.clientX+14)+'px';
+      tip.style.top=Math.max(8,ev.clientY-48)+'px';
+      tip.style.display='block';
+    }else tip.style.display='none';
+  });
+  cv.addEventListener('mouseleave',()=>{const t=el('chart-tip');if(t)t.style.display='none';});
+}
+
+function drawChart(cid,data,emptyEl,opts){
+  opts=opts||{};
   const cv=el(cid);if(!cv)return;
   if(data.length<2){if(emptyEl)emptyEl.style.display='flex';return;}
   if(emptyEl)emptyEl.style.display='none';
+  cv._chartData=data;
+  initChartTooltip(cv);
   const ctx=cv.getContext('2d'),W=cv.width=cv.offsetWidth,H=cv.height=cv.offsetHeight;
   ctx.clearRect(0,0,W,H);
   const vs=data.map(e=>e.weight||e.y),mn=Math.min(...vs)-1,mx=Math.max(...vs)+1,rng=mx-mn;
-  const px=i=>(i/(data.length-1))*(W-40)+20,py=v=>H-20-((v-mn)/rng)*(H-40);
+  const LP=36,RP=10;
+  const px=i=>LP+(i/(data.length-1))*(W-LP-RP),py=v=>H-20-((v-mn)/rng)*(H-40);
+  // Grid + Y labels
   ctx.strokeStyle='rgba(42,42,61,.8)';ctx.lineWidth=1;
-  for(let i=0;i<4;i++){const y=20+(i/3)*(H-40);ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.fillStyle='rgba(107,107,133,.65)';ctx.font='8px Space Mono,monospace';ctx.textAlign='right';
+  for(let i=0;i<4;i++){
+    const y=20+(i/3)*(H-40),v=mx-rng*(i/3);
+    ctx.beginPath();ctx.moveTo(LP,y);ctx.lineTo(W-RP,y);ctx.stroke();
+    ctx.fillText(v.toFixed(1),LP-3,y+3);
+  }
+  ctx.textAlign='center';
+  // Gradient fill
   const g=ctx.createLinearGradient(0,0,0,H);
   g.addColorStop(0,'rgba(124,106,247,.3)');g.addColorStop(1,'rgba(124,106,247,0)');
   ctx.beginPath();ctx.moveTo(px(0),H-20);
   data.forEach((e,i)=>ctx.lineTo(px(i),py(e.weight||e.y)));
   ctx.lineTo(px(data.length-1),H-20);ctx.closePath();ctx.fillStyle=g;ctx.fill();
+  // Main line
   ctx.beginPath();ctx.strokeStyle='#7c6af7';ctx.lineWidth=2;ctx.lineJoin='round';
   data.forEach((e,i)=>i===0?ctx.moveTo(px(i),py(e.weight||e.y)):ctx.lineTo(px(i),py(e.weight||e.y)));
   ctx.stroke();
+  // 7-day moving average
+  if(opts.ma&&data.length>=4){
+    const ma=data.map((_,i)=>{const s=Math.max(0,i-6),sl=data.slice(s,i+1);return sl.reduce((sum,e)=>sum+(e.weight||e.y),0)/sl.length;});
+    ctx.beginPath();ctx.strokeStyle='rgba(247,196,106,.7)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);
+    ma.forEach((v,i)=>i===0?ctx.moveTo(px(i),py(v)):ctx.lineTo(px(i),py(v)));
+    ctx.stroke();ctx.setLineDash([]);
+  }
+  // Data points
   data.forEach((e,i)=>{ctx.beginPath();ctx.arc(px(i),py(e.weight||e.y),4,0,Math.PI*2);ctx.fillStyle='#7c6af7';ctx.fill();ctx.beginPath();ctx.arc(px(i),py(e.weight||e.y),2,0,Math.PI*2);ctx.fillStyle='#0a0a0f';ctx.fill();});
+  // X labels
   ctx.fillStyle='rgba(107,107,133,.8)';ctx.font='9px Space Mono,monospace';ctx.textAlign='center';
   data.forEach((e,i)=>{if(data.length<=7||i===0||i===data.length-1||i%Math.ceil(data.length/5)===0)ctx.fillText((e.date||'').slice(5),px(i),H-4);});
 }
@@ -653,6 +711,7 @@ async function addEntry(){
   const w=parseFloat(gv('lw')),d=gv('ld'),n=gv('ln');
   if(!w||w<30||w>300)return toast('Peso non valido');
   if(!d)return toast('Seleziona una data');
+  if(d>new Date().toISOString().slice(0,10))return toast('Non puoi inserire date future');
   btnL('badd',true,'Salvataggio...');
   const{data,error}=await sb.from('entries').insert({user_id:user.id,weight:w,date:d,note:n,mood,tags:[...tags]}).select().single();
   btnL('badd',false,'+ Aggiungi Misurazione');
@@ -662,10 +721,23 @@ async function addEntry(){
   renderEntries();updateHeader();renderDash();toast('Misurazione salvata!');
 }
 
+function setFilter(f,btn){
+  logFilter=f;
+  document.querySelectorAll('.flt-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderEntries();
+}
+
 function renderEntries(){
   const list=el('elist');
-  if(!entries.length){list.innerHTML='<div class="empty"><div class="ei">📋</div>Nessuna misurazione</div>';return;}
-  const sorted=[...entries].reverse();
+  let filtered=[...entries];
+  if(logFilter!=='all'){
+    const days=parseInt(logFilter);
+    const cutoff=new Date();cutoff.setDate(cutoff.getDate()-days);
+    filtered=filtered.filter(e=>new Date(e.date)>=cutoff);
+  }
+  if(!filtered.length){list.innerHTML='<div class="empty"><div class="ei">📋</div>Nessuna misurazione</div>';return;}
+  const sorted=[...filtered].reverse();
   list.innerHTML=sorted.map((e,i)=>{
     const prev=sorted[i+1];let dtag='';
     if(prev){const df=e.weight-prev.weight,s=df>0?'+':'';
@@ -681,6 +753,7 @@ function renderEntries(){
 }
 
 async function delEntry(id){
+  if(!confirm('Eliminare questa misurazione?'))return;
   await sb.from('entries').delete().eq('id',id).eq('user_id',user.id);
   entries=entries.filter(e=>String(e.id)!==String(id));
   renderEntries();renderDash();updateHeader();toast('Entry eliminata');
@@ -782,12 +855,20 @@ function renderStat(){
     const days=Math.max(1,(new Date(l.date)-new Date(f.date))/864e5);
     const rate=((f.weight-l.weight)/days*7).toFixed(2);
     const re=el('srate');re.textContent=(rate>0?'-':'+')+Math.abs(rate);re.style.color=rate>0?'var(--success)':'var(--danger)';
-    el('scon').textContent=Math.round(entries.length/days*100)+'%';
+    const uniqueDays=new Set(entries.map(e=>e.date)).size;
+    el('scon').textContent=Math.min(100,Math.round(uniqueDays/days*100))+'%';
   }
-  const dates=new Set(entries.map(e=>e.date));let sc=0,sb2=0,cur=0;
-  const t=new Date();t.setHours(0,0,0,0);
-  for(let i=0;i<365;i++){const d=new Date(t);d.setDate(d.getDate()-i);const ds=d.toISOString().slice(0,10);
-    if(dates.has(ds)){cur++;if(i<=1)sc=cur;sb2=Math.max(sb2,cur);}else{if(i>1)cur=0;}}
+  const dates=new Set(entries.map(e=>e.date));
+  // Current streak: consecutive days ending at today or yesterday
+  let sc=0;const checkD=new Date();checkD.setHours(0,0,0,0);
+  if(!dates.has(checkD.toISOString().slice(0,10)))checkD.setDate(checkD.getDate()-1);
+  while(dates.has(checkD.toISOString().slice(0,10))){sc++;checkD.setDate(checkD.getDate()-1);}
+  // Best streak: longest consecutive sequence
+  let sb2=0,cur=0,prevDs=null;
+  for(const ds of [...dates].sort()){
+    if(!prevDs){cur=1;}else{const diff=Math.round((new Date(ds)-new Date(prevDs))/864e5);cur=diff===1?cur+1:1;}
+    sb2=Math.max(sb2,cur);prevDs=ds;
+  }
   el('ssc').textContent=sc;el('ssb').textContent=sb2;
   const byM={};entries.forEach(e=>{const k=e.date.slice(0,7);if(!byM[k])byM[k]=[];byM[k].push(e.weight);});
   const ms=Object.keys(byM).sort().reverse().slice(0,6);
@@ -825,6 +906,7 @@ function drawProjection(){
   real.forEach(d=>{ctx.beginPath();ctx.arc(px(d.x),py(d.y),3,0,Math.PI*2);ctx.fillStyle='#7c6af7';ctx.fill();});
   const lp=proj[proj.length-1],inf=el('spinfo');
   inf.style.display='block';inf.textContent=(slope<0?'Calante: '+Math.abs(slope).toFixed(2):'Crescente: '+Math.abs(slope).toFixed(2))+' kg/mis - Proiezione: '+lp.y.toFixed(1)+' kg';
+  cv._chartData=allD;initChartTooltip(cv);
 }
 
 function renderProfile(){
