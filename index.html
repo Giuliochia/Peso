@@ -1,124 +1,57 @@
-<!DOCTYPE html>
-<html lang="it">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peso App</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: sans-serif;
-            background-color: #0e0e0e;
-            color: #fff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const user = { id: 'utente1' };
+
+    // Carica foto da localStorage o array vuoto
+    let photos = JSON.parse(localStorage.getItem('plp_' + user.id)) || [];
+
+    function savePhotos() {
+        try {
+            localStorage.setItem('plp_' + user.id, JSON.stringify(photos));
+        } catch (e) {
+            if (e.name === 'QuotaExceededError') alert('Spazio esaurito!');
+            else console.error(e);
         }
-        #loader {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        #photoContainer img {
-            width: 100px;
-            height: 100px;
-            margin: 5px;
-            object-fit: cover;
-        }
-        button {
-            margin: 5px;
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-    </style>
-</head>
-<body>
+    }
 
-    <div id="loader">
-        <div class="spinner" style="width:50px;height:50px;border:5px solid #333;border-top-color:#6c63ff;border-radius:50%;margin:auto;animation: spin 1s linear infinite;"></div>
-        <p>Caricamento...</p>
-    </div>
+    function renderPhotos() {
+        const container = document.getElementById('photoContainer');
+        if (!container) return console.error('photoContainer non trovato!');
+        container.innerHTML = '';
+        photos.forEach(photo => {
+            const img = document.createElement('img');
+            img.src = photo.url;
+            img.alt = photo.name || 'Foto';
+            container.appendChild(img);
+        });
+    }
 
-    <div id="photoContainer"></div>
+    function initUI() {
+        console.log('InitUI avviata');
 
-    <div id="controls">
-        <button id="addPhotoButton">Aggiungi Foto</button>
-        <button id="removePhotoButton">Rimuovi Foto</button>
-    </div>
+        renderPhotos();
 
-    <script>
-        // Mock utente e array foto
-        const user = { id: 'utente1' };
-        let photos = [];
+        const addBtn = document.getElementById('addPhotoButton');
+        const removeBtn = document.getElementById('removePhotoButton');
 
-        // Salvataggio sicuro su localStorage
-        function savePhotos() {
-            try {
-                localStorage.setItem('plp_' + user.id, JSON.stringify(photos));
-            } catch (e) {
-                if (e.name === 'QuotaExceededError') {
-                    alert('Spazio esaurito! Rimuovi alcune foto.');
-                } else {
-                    console.error(e);
-                }
-            }
-        }
-
-        // Render foto
-        function renderPhotos() {
-            const container = document.getElementById('photoContainer');
-            if (!container) return;
-            container.innerHTML = '';
-            photos.forEach(photo => {
-                const img = document.createElement('img');
-                img.src = photo.url;
-                img.alt = photo.name || 'Foto';
-                container.appendChild(img);
-            });
-            console.log("Foto renderizzate:", photos.length);
-        }
-
-        // Inizializzazione UI
-        function initUI() {
-            console.log("InitUI avviata");
-
+        if (addBtn) addBtn.addEventListener('click', () => {
+            photos.push({ url: 'https://via.placeholder.com/100', name: 'Nuova Foto' });
             renderPhotos();
+            savePhotos();
+        });
 
-            const addBtn = document.getElementById('addPhotoButton');
-            const removeBtn = document.getElementById('removePhotoButton');
+        if (removeBtn) removeBtn.addEventListener('click', () => {
+            photos.pop();
+            renderPhotos();
+            savePhotos();
+        });
 
-            if (addBtn) addBtn.addEventListener('click', () => {
-                const newPhoto = { url: 'https://via.placeholder.com/100', name: 'Nuova Foto' };
-                photos.push(newPhoto);
-                renderPhotos();
-                savePhotos();
-            });
+        const loader = document.getElementById('loader');
+        if (loader) loader.style.display = 'none';
 
-            if (removeBtn) removeBtn.addEventListener('click', () => {
-                photos.pop();
-                renderPhotos();
-                savePhotos();
-            });
+        console.log('InitUI completata');
+    }
 
-            // Rimuove loader
-            const loader = document.getElementById('loader');
-            if (loader) loader.style.display = 'none';
-
-            console.log("InitUI completata");
-        }
-
-        // Avvio quando il DOM è pronto
-        document.addEventListener('DOMContentLoaded', initUI);
-    </script>
-
-    <style>
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-    </style>
-
-</body>
-</html>
+    initUI();
+});
+</script>
