@@ -1,57 +1,60 @@
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const user = { id: 'utente1' };
-
-    // Carica foto da localStorage o array vuoto
-    let photos = JSON.parse(localStorage.getItem('plp_' + user.id)) || [];
-
-    function savePhotos() {
-        try {
-            localStorage.setItem('plp_' + user.id, JSON.stringify(photos));
-        } catch (e) {
-            if (e.name === 'QuotaExceededError') alert('Spazio esaurito!');
-            else console.error(e);
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peso App</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background-color: #0e0e0e;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
         }
-    }
 
-    function renderPhotos() {
-        const container = document.getElementById('photoContainer');
-        if (!container) return console.error('photoContainer non trovato!');
-        container.innerHTML = '';
-        photos.forEach(photo => {
-            const img = document.createElement('img');
-            img.src = photo.url;
-            img.alt = photo.name || 'Foto';
-            container.appendChild(img);
+        #loader {
+            text-align: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #333;
+            border-top-color: #6c63ff;
+            border-radius: 50%;
+            margin: auto;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Loader -->
+    <div id="loader">
+        <div class="spinner"></div>
+        <p>Caricamento...</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM pronto, loader rimosso');
+
+            // Nasconde il loader subito perché non ci sono foto da caricare
+            const loader = document.getElementById('loader');
+            if (loader) loader.style.display = 'none';
+
+            // Qui puoi aggiungere eventuale inizializzazione futura
         });
-    }
-
-    function initUI() {
-        console.log('InitUI avviata');
-
-        renderPhotos();
-
-        const addBtn = document.getElementById('addPhotoButton');
-        const removeBtn = document.getElementById('removePhotoButton');
-
-        if (addBtn) addBtn.addEventListener('click', () => {
-            photos.push({ url: 'https://via.placeholder.com/100', name: 'Nuova Foto' });
-            renderPhotos();
-            savePhotos();
-        });
-
-        if (removeBtn) removeBtn.addEventListener('click', () => {
-            photos.pop();
-            renderPhotos();
-            savePhotos();
-        });
-
-        const loader = document.getElementById('loader');
-        if (loader) loader.style.display = 'none';
-
-        console.log('InitUI completata');
-    }
-
-    initUI();
-});
-</script>
+    </script>
+</body>
+</html>
